@@ -1,0 +1,35 @@
+spring:
+  mqtt:
+    broker-url: tcp://broker.hivemq.com:1883
+    client-id: airq-cloud-backend
+    default-topic: airq/cloud/telemetry
+  datasource:
+    url: jdbc:postgresql://localhost:5432/airq
+    username: postgres
+    password: postgres
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: noreply.oxaira@gmail.com
+    password: naanabgqvkkpyzhz
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  sql:
+    init:
+      mode: never
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+
+    properties:
+      hibernate:
+        format_sql: true
