@@ -1,29 +1,36 @@
 package com.oxaira.airq.notifications;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${spring.brevo.api.url:https://api.brevo.com/v3/smtp/email}")
+    private String apiUrl;
+
+    @Value("${spring.brevo.api.key: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}")
+    private String apiKey;
+
+    @Value("${spring.brevo.api.sender:b01efb001@smtp-brevo.com}")
+    private String senderEmail;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Async
     public void sendTechWelcomeEmail(String toEmail, String techName, String tempPassword) {
-        MimeMessage message = mailSender.createMimeMessage();
-
         try {
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("noreply.oxaira@gmail.com");
-            helper.setTo(toEmail);
-            helper.setSubject("Bienvenido a AirQ - Credenciales de acceso");
-
             String htmlContent = """
                     <div style=\"font-family: Arial, sans-serif; background-color: #F8FAFC; padding: 24px;\">
                       <div style=\"max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);\">
@@ -46,9 +53,25 @@ public class EmailService {
                     </div>
                     """.formatted(techName, toEmail, tempPassword);
 
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (MessagingException e) {
+            Map<String, Object> requestBody = Map.of(
+                    "sender", Map.of("name", "AirQ System", "email", senderEmail),
+                    "to", List.of(Map.of("email", toEmail, "name", techName)),
+                    "subject", "Bienvenido a AirQ - Credenciales de acceso",
+                    "htmlContent", htmlContent
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("api-key", apiKey);
+            headers.set("Content-Type", "application/json");
+            headers.set("Accept", "application/json");
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
+            log.info("Email enviado exitosamente a {} vía Brevo API. Respuesta: {}", toEmail, response.getBody());
+
+        } catch (Exception e) {
+            log.error("Error al enviar el correo de bienvenida a {}: {}", toEmail, e.getMessage());
             throw new RuntimeException("No se pudo enviar el correo de bienvenida", e);
         }
     }

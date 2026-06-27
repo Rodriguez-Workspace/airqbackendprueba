@@ -8,17 +8,12 @@ spring:
     username: postgres
     password: postgres
 
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: noreply.oxaira@gmail.com
-    password: naanabgqvkkpyzhz
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+  # Brevo API configuration replacing SMTP to avoid port 587 blocking on cloud platforms
+  brevo:
+    api:
+      url: https://api.brevo.com/v3/smtp/email
+      key: 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
+      sender: b01efb001@smtp-brevo.com
 
   sql:
     init:
