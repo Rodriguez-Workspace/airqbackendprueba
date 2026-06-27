@@ -85,6 +85,13 @@ public class AdminTechController {
         return savedUser;
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTechnician(@PathVariable Long id) {
+        userRepository.findById(id).ifPresent(userRepository::delete);
+    }
+
     private String generateTemporaryPassword() {
         SecureRandom random = new SecureRandom();
         return IntStream.range(0, 12)
