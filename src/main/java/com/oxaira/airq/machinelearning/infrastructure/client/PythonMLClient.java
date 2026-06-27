@@ -16,7 +16,7 @@ public class PythonMLClient {
 
     private final RestTemplate restTemplate;
 
-    @Value("${ml.api.url:http://localhost:5000/predict}")
+    @Value("${ml.api.url:https://ml-iotprueba.onrender.com/predict}")
     private String mlApiUrl;
 
     public PythonMLClient() {
