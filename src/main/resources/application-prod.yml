@@ -18,7 +18,7 @@ spring:
   brevo:
     api:
       url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
-      key: ${BREVO_API_KEY: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}
+      key: ${BREVO_API_KEY}
       sender: ${BREVO_SENDER:noreply.oxaira@gmail.com}
 
 ml:

@@ -20,7 +20,7 @@ public class EmailService {
     @Value("${spring.brevo.api.url:https://api.brevo.com/v3/smtp/email}")
     private String apiUrl;
 
-    @Value("${spring.brevo.api.key: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}")
+    @Value("${spring.brevo.api.key}")
     private String apiKey;
 
     @Value("${spring.brevo.api.sender:b01efb001@smtp-brevo.com}")
