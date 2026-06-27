@@ -31,14 +31,16 @@ public class AdminClientController {
                 .map(user -> {
                     Subscription sub = user.getSubscription();
                     
-                    String institutionName = "Sin Asignar";
+                    String institutionName = user.getCompanyName() != null ? user.getCompanyName() : "Sin Asignar";
                     String planName = "N/A";
                     Integer sensorsCount = 0;
                     Integer sensorsLimit = 0;
                     Double billing = 0.0;
                     
                     if (sub != null) {
-                        institutionName = sub.getOrganizationName();
+                        if (sub.getOrganizationName() != null) {
+                            institutionName = sub.getOrganizationName();
+                        }
                         planName = sub.getPlan().getName();
                         sensorsCount = sub.getAssignedSensorsCount() != null ? sub.getAssignedSensorsCount() : 0;
                         sensorsLimit = sub.getPlan().getBaseSensorLimit();
