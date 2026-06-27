@@ -4,6 +4,7 @@ public record TechClientResponseDTO(
         Long id,
         String name,
         String email,
+        String companyName,
         java.util.List<String> campuses
 ) {
 }

@@ -35,6 +35,8 @@ public class User {
 
     private LocalDateTime createdAt;
 
+    private String companyName;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;

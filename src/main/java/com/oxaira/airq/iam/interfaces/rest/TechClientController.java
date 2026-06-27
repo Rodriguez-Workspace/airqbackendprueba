@@ -27,10 +27,12 @@ public class TechClientController {
                 .filter(user -> user.getRole() != null && "CLIENT".equalsIgnoreCase(user.getRole().getName()))
                 .map(user -> {
                     String name = user.getUsername() != null ? user.getUsername() : "Cliente";
+                    String company = user.getCompanyName() != null ? user.getCompanyName() : "Sin Empresa";
                     return new TechClientResponseDTO(
                             user.getId(),
                             name,
                             user.getEmail(),
+                            company,
                             user.getCampuses() != null ? user.getCampuses() : java.util.Collections.emptyList()
                     );
                 })

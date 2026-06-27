@@ -39,6 +39,7 @@ public class RegisterUserUseCase {
                 .password(passwordEncoder.encode(request.password()))
                 .enabled(false)
                 .createdAt(LocalDateTime.now())
+                .companyName(request.companyName())
                 .role(role)
                 .build();
 

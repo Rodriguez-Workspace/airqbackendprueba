@@ -6,7 +6,9 @@ public record RegisterUserRequest(
 
         String email,
 
-        String password
+        String password,
+        
+        String companyName
 
 ) {
 }
