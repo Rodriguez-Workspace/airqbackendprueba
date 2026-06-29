@@ -55,6 +55,7 @@ public class EmailService {
 
             Map<String, Object> requestBody = Map.of(
                     "sender", Map.of("name", "AirQ System", "email", senderEmail),
+                    "replyTo", Map.of("name", "AirQ System", "email", senderEmail),
                     "to", List.of(Map.of("email", toEmail, "name", techName)),
                     "subject", "Bienvenido a AirQ - Credenciales de acceso",
                     "htmlContent", htmlContent
