@@ -19,6 +19,12 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.admin.default.email}")
+    private String defaultAdminEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${spring.admin.default.password}")
+    private String defaultAdminPassword;
+
     @Override
     public void run(String... args) {
 
@@ -28,17 +34,12 @@ public class DataInitializer implements CommandLineRunner {
 
         createUser(
                 "admin",
-                "admin@gmail.com",
-                "123456",
+                defaultAdminEmail,
+                defaultAdminPassword,
                 "ADMIN"
         );
 
-        createUser(
-                "cliente",
-                "cliente@gmail.com",
-                "123456",
-                "CLIENT"
-        );
+
 
     }
 

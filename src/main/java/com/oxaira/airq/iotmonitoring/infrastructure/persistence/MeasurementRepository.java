@@ -29,4 +29,14 @@ public interface MeasurementRepository
 
     @Query("SELECT m FROM Measurement m WHERE m.sensor.clientId = :clientId AND m.recordedAt >= :startDate ORDER BY m.recordedAt ASC")
     List<Measurement> getMeasurementsByClientIdAndDateAfter(@Param("clientId") Long clientId, @Param("startDate") java.time.LocalDateTime startDate);
+
+    @Query("SELECT new com.oxaira.airq.iotmonitoring.application.dto.AverageMetricsDTO(" +
+           "AVG(m.co2), AVG(m.pm25), AVG(m.temperature), AVG(m.humidity)) " +
+           "FROM Measurement m WHERE m.sensor.clientId = :clientId AND m.sensor.campus = :campus AND m.id IN (" +
+           "  SELECT MAX(m2.id) FROM Measurement m2 GROUP BY m2.sensor.id" +
+           ")")
+    com.oxaira.airq.iotmonitoring.application.dto.AverageMetricsDTO getAverageMetricsByClientIdAndCampus(@Param("clientId") Long clientId, @Param("campus") String campus);
+
+    @Query("SELECT m FROM Measurement m WHERE m.sensor.clientId = :clientId AND m.sensor.campus = :campus AND m.recordedAt >= :startDate ORDER BY m.recordedAt ASC")
+    List<Measurement> getMeasurementsByClientIdAndCampusAndDateAfter(@Param("clientId") Long clientId, @Param("campus") String campus, @Param("startDate") java.time.LocalDateTime startDate);
 }

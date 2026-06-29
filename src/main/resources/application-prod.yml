@@ -21,6 +21,11 @@ spring:
       key: ${BREVO_API_KEY}
       sender: ${BREVO_SENDER:noreply.oxaira@gmail.com}
 
+  admin:
+    default:
+      email: ${ADMIN_DEFAULT_EMAIL}
+      password: ${ADMIN_DEFAULT_PASSWORD}
+
 ml:
   api:
     url: ${ML_API_URL:https://ml-iotprueba.onrender.com/predict}

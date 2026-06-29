@@ -45,7 +45,9 @@ public class ClientSensorController {
     }
 
     @GetMapping("/metrics/average")
-    public ResponseEntity<com.oxaira.airq.iotmonitoring.application.dto.AverageMetricsDTO> getAverageMetrics(Authentication authentication) {
+    public ResponseEntity<com.oxaira.airq.iotmonitoring.application.dto.AverageMetricsDTO> getAverageMetrics(
+            Authentication authentication,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String campus) {
         if (authentication == null) {
             return ResponseEntity.status(401).build();
         }
@@ -54,7 +56,14 @@ public class ClientSensorController {
         if (user == null) {
             return ResponseEntity.notFound().build();
         }
-        var metrics = measurementRepository.getAverageMetricsByClientId(user.getId());
+        
+        com.oxaira.airq.iotmonitoring.application.dto.AverageMetricsDTO metrics;
+        if (campus != null && !campus.isEmpty()) {
+            metrics = measurementRepository.getAverageMetricsByClientIdAndCampus(user.getId(), campus);
+        } else {
+            metrics = measurementRepository.getAverageMetricsByClientId(user.getId());
+        }
+        
         return ResponseEntity.ok(metrics);
     }
 
@@ -111,7 +120,11 @@ public class ClientSensorController {
     }
 
     @GetMapping("/metrics/historical")
-    public ResponseEntity<List<com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO>> getHistoricalMetrics(Authentication authentication) {
+    public ResponseEntity<List<com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO>> getHistoricalMetrics(
+            Authentication authentication,
+            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "0") int offset,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String campus) {
+        
         if (authentication == null) {
             return ResponseEntity.status(401).build();
         }
@@ -121,31 +134,49 @@ public class ClientSensorController {
             return ResponseEntity.notFound().build();
         }
 
-        // Get measurements from the beginning of today (00:00)
-        java.time.LocalDateTime startDate = java.time.LocalDate.now().atStartOfDay();
-        List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> measurements = measurementRepository.getMeasurementsByClientIdAndDateAfter(user.getId(), startDate);
+        // Get client's current time
+        java.time.LocalDateTime serverNow = java.time.LocalDateTime.now(java.time.ZoneId.of("UTC"));
+        java.time.LocalDateTime clientNow = serverNow.minusMinutes(offset);
 
-        // Group by hour
-        java.util.Map<Integer, List<com.oxaira.airq.iotmonitoring.domain.model.Measurement>> groupedByHour = measurements.stream()
-                .collect(java.util.stream.Collectors.groupingBy(m -> m.getRecordedAt().getHour()));
+        // Get measurements from the beginning of client's today (00:00)
+        java.time.LocalDateTime clientStartDate = clientNow.toLocalDate().atStartOfDay();
+        
+        // Convert client's 00:00 back to server time for the DB query
+        java.time.LocalDateTime serverStartDate = clientStartDate.plusMinutes(offset);
+
+        List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> measurements;
+        if (campus != null && !campus.isEmpty()) {
+            measurements = measurementRepository.getMeasurementsByClientIdAndCampusAndDateAfter(user.getId(), campus, serverStartDate);
+        } else {
+            measurements = measurementRepository.getMeasurementsByClientIdAndDateAfter(user.getId(), serverStartDate);
+        }
+
+        // Group by client's 1-minute slot (1440 slots per day)
+        java.util.Map<Integer, List<com.oxaira.airq.iotmonitoring.domain.model.Measurement>> groupedBySlot = measurements.stream()
+                .collect(java.util.stream.Collectors.groupingBy(m -> {
+                    java.time.LocalDateTime localTime = m.getRecordedAt().minusMinutes(offset);
+                    return localTime.getHour() * 60 + localTime.getMinute();
+                }));
 
         List<com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO> historicalData = new java.util.ArrayList<>();
         
-        // Ensure all 24 hours of today (00:00 to 23:00) are present in the response
-        for (int i = 0; i < 24; i++) {
-            String hourString = String.format("%02d:00", i);
+        // Ensure all 1440 slots of today (00:00 to 23:59) are present in the response
+        for (int i = 0; i < 1440; i++) {
+            int hour = i / 60;
+            int min = i % 60;
+            String timeString = String.format("%02d:%02d", hour, min);
 
-            List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> hourMeasurements = groupedByHour.getOrDefault(i, Collections.emptyList());
+            List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> slotMeasurements = groupedBySlot.getOrDefault(i, Collections.emptyList());
 
-            if (hourMeasurements.isEmpty()) {
-                historicalData.add(new com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO(hourString, 0.0, 0.0, 0.0, 0.0));
+            if (slotMeasurements.isEmpty()) {
+                historicalData.add(new com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO(timeString, null, null, null, null));
             } else {
-                double avgCo2 = hourMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getCo2).average().orElse(0.0);
-                double avgPm25 = hourMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getPm25).average().orElse(0.0);
-                double avgTemp = hourMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getTemperature).average().orElse(0.0);
-                double avgHum = hourMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getHumidity).average().orElse(0.0);
+                double avgCo2 = slotMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getCo2).average().orElse(0.0);
+                double avgPm25 = slotMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getPm25).average().orElse(0.0);
+                double avgTemp = slotMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getTemperature).average().orElse(0.0);
+                double avgHum = slotMeasurements.stream().mapToDouble(com.oxaira.airq.iotmonitoring.domain.model.Measurement::getHumidity).average().orElse(0.0);
                 
-                historicalData.add(new com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO(hourString, avgCo2, avgPm25, avgTemp, avgHum));
+                historicalData.add(new com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO(timeString, avgCo2, avgPm25, avgTemp, avgHum));
             }
         }
 

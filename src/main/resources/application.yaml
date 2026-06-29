@@ -28,3 +28,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  admin:
+    default:
+      email: ${ADMIN_DEFAULT_EMAIL:admin@gmail.com}
+      password: ${ADMIN_DEFAULT_PASSWORD:123456}
