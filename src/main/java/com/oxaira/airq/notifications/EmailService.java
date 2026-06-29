@@ -62,7 +62,7 @@ public class EmailService {
             );
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("api-key", apiKey);
+            headers.set("api-key", apiKey.trim());
             headers.set("Content-Type", "application/json");
             headers.set("Accept", "application/json");
 

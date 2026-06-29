@@ -23,7 +23,7 @@ spring:
 
 ml:
   api:
-    url: ${ML_API_URL}
+    url: ${ML_API_URL:https://ml-iotprueba.onrender.com/predict}
 
 cors:
   allowed:

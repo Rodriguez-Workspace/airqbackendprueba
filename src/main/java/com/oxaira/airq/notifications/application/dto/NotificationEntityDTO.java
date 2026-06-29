@@ -13,7 +13,7 @@ public class NotificationEntityDTO {
     private String diagnosis;
     private String executedAction;
     private Boolean isRead;
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     public static NotificationEntityDTO fromEntity(NotificationEntity entity) {
         NotificationEntityDTO dto = new NotificationEntityDTO();
@@ -23,7 +23,7 @@ public class NotificationEntityDTO {
         dto.setDiagnosis(entity.getDiagnosis());
         dto.setExecutedAction(entity.getExecutedAction());
         dto.setIsRead(entity.getIsRead());
-        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setCreatedAt(entity.getCreatedAt() != null ? entity.getCreatedAt().toString() + "Z" : null);
         return dto;
     }
 }

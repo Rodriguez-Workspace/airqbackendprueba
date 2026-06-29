@@ -121,8 +121,8 @@ public class ClientSensorController {
             return ResponseEntity.notFound().build();
         }
 
-        // Get measurements from the last 24 hours
-        java.time.LocalDateTime startDate = java.time.LocalDateTime.now().minusHours(24);
+        // Get measurements from the beginning of today (00:00)
+        java.time.LocalDateTime startDate = java.time.LocalDate.now().atStartOfDay();
         List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> measurements = measurementRepository.getMeasurementsByClientIdAndDateAfter(user.getId(), startDate);
 
         // Group by hour
@@ -131,14 +131,11 @@ public class ClientSensorController {
 
         List<com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO> historicalData = new java.util.ArrayList<>();
         
-        // Ensure all 24 hours are present in the response
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        for (int i = 23; i >= 0; i--) {
-            java.time.LocalDateTime hourTime = now.minusHours(i);
-            int hour = hourTime.getHour();
-            String hourString = String.format("%02d:00", hour);
+        // Ensure all 24 hours of today (00:00 to 23:00) are present in the response
+        for (int i = 0; i < 24; i++) {
+            String hourString = String.format("%02d:00", i);
 
-            List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> hourMeasurements = groupedByHour.getOrDefault(hour, Collections.emptyList());
+            List<com.oxaira.airq.iotmonitoring.domain.model.Measurement> hourMeasurements = groupedByHour.getOrDefault(i, Collections.emptyList());
 
             if (hourMeasurements.isEmpty()) {
                 historicalData.add(new com.oxaira.airq.iotmonitoring.application.dto.HourlyMetricDTO(hourString, 0.0, 0.0, 0.0, 0.0));

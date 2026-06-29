@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+import java.time.temporal.ChronoUnit;
+
 @Component
 @RequiredArgsConstructor
 public class AIAlertListener {
@@ -31,17 +33,31 @@ public class AIAlertListener {
                 User client = userRepository.findById(sensor.getClientId()).orElse(null);
                 
                 if (client != null) {
-                    NotificationEntity notification = NotificationEntity.builder()
-                            .client(client)
-                            .type("AI_ACTION")
-                            .location(sensor.getLocation() != null ? sensor.getLocation() : "Desconocida")
-                            .diagnosis(event.riskLevel() + ": Detección algorítmica de riesgo.")
-                            .executedAction(event.aiActionTaken())
-                            .isRead(false)
-                            .createdAt(LocalDateTime.now())
-                            .build();
+                    String location = sensor.getLocation() != null ? sensor.getLocation() : "Desconocida";
+                    String executedAction = event.aiActionTaken();
+                    
+                    NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationOrderByCreatedAtDesc(client, location);
+                    
+                    boolean shouldSave = true;
+                    if (lastNotification != null 
+                        && executedAction.equals(lastNotification.getExecutedAction()) 
+                        && ChronoUnit.MINUTES.between(lastNotification.getCreatedAt(), LocalDateTime.now()) < 15) {
+                        shouldSave = false; // Debounce: Ya hay una alerta idéntica reciente
+                    }
 
-                    notificationRepository.save(notification);
+                    if (shouldSave) {
+                        NotificationEntity notification = NotificationEntity.builder()
+                                .client(client)
+                                .type("AI_ACTION")
+                                .location(location)
+                                .diagnosis(event.riskLevel() + ": Detección algorítmica de riesgo.")
+                                .executedAction(executedAction)
+                                .isRead(false)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+
+                        notificationRepository.save(notification);
+                    }
                 }
             }
         }
