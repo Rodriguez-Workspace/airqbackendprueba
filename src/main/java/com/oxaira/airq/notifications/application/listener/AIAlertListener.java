@@ -42,7 +42,7 @@ public class AIAlertListener {
                     if (lastNotification != null 
                         && executedAction.equals(lastNotification.getExecutedAction()) 
                         && ChronoUnit.MINUTES.between(lastNotification.getCreatedAt(), LocalDateTime.now()) < 15) {
-                        shouldSave = false; // Debounce: Ya hay una alerta idéntica reciente para esta aula
+                        shouldSave = false; // Debounce: Ya hay una alerta idéntica reciente. El cliente puede o no haberla leído.
                     }
 
                     if (shouldSave) {
@@ -57,6 +57,26 @@ public class AIAlertListener {
                                 .build();
 
                         notificationRepository.save(notification);
+                    }
+                }
+            }
+        } else if ("LOW".equals(event.riskLevel())) {
+            // Auto-resolución: Si el riesgo vuelve a la normalidad (LOW), cerramos la alerta previa (leída o no).
+            Sensor sensor = sensorRepository.findBySerialNumber(event.sensorId()).orElse(null);
+            
+            if (sensor != null && sensor.getClientId() != null) {
+                User client = userRepository.findById(sensor.getClientId()).orElse(null);
+                
+                if (client != null) {
+                    String location = sensor.getLocation() != null ? sensor.getLocation() : "Desconocida";
+                    NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationAndTypeOrderByCreatedAtDesc(client, location, "AI_ACTION");
+                    
+                    // Si existe una alerta reciente que NO ha sido marcada como resuelta aún
+                    if (lastNotification != null && !lastNotification.getExecutedAction().contains("[✓ RESUELTO AUTOMÁTICAMENTE]")) {
+                        lastNotification.setIsRead(true);
+                        // Modificamos el texto para que el cliente sepa que la IA ya lo solucionó y para romper el debounce de futuros problemas
+                        lastNotification.setExecutedAction(lastNotification.getExecutedAction() + " [✓ RESUELTO AUTOMÁTICAMENTE]");
+                        notificationRepository.save(lastNotification);
                     }
                 }
             }
