@@ -72,10 +72,10 @@ public class AIAlertListener {
                     NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationAndTypeOrderByCreatedAtDesc(client, location, "AI_ACTION");
                     
                     // Si existe una alerta reciente que NO ha sido marcada como resuelta aún
-                    if (lastNotification != null && !lastNotification.getExecutedAction().contains("[RESUELTO AUTOMÁTICAMENTE]")) {
+                    if (lastNotification != null && !lastNotification.getExecutedAction().contains("[✓ RESUELTO AUTOMÁTICAMENTE]")) {
                         lastNotification.setIsRead(true);
                         // Modificamos el texto para que el cliente sepa que la IA ya lo solucionó y para romper el debounce de futuros problemas
-                        lastNotification.setExecutedAction(lastNotification.getExecutedAction() + " [RESUELTO AUTOMÁTICAMENTE]");
+                        lastNotification.setExecutedAction(lastNotification.getExecutedAction() + " [✓ RESUELTO AUTOMÁTICAMENTE]");
                         notificationRepository.save(lastNotification);
                     }
                 }
