@@ -18,13 +18,17 @@ public class TicketQueryService {
     }
 
     public List<TicketResponseDTO> getAllTickets(String status) {
+        java.time.LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
+
         if (status != null && !status.isEmpty()) {
             TicketStatus ticketStatus = TicketStatus.valueOf(status.toUpperCase());
             return repository.findByStatus(ticketStatus).stream()
+                .filter(t -> t.getStatus() != TicketStatus.RESOLVED || t.getResolvedAt() == null || !t.getResolvedAt().isBefore(startOfDay))
                 .map(TicketResponseDTO::fromEntity)
                 .collect(Collectors.toList());
         }
         return repository.findAll().stream()
+            .filter(t -> t.getStatus() != TicketStatus.RESOLVED || t.getResolvedAt() == null || !t.getResolvedAt().isBefore(startOfDay))
             .map(TicketResponseDTO::fromEntity)
             .collect(Collectors.toList());
     }

@@ -52,18 +52,30 @@ public class HardwareWatchdogService {
         if (sensor.getClientId() != null) {
             User client = userRepository.findById(sensor.getClientId()).orElse(null);
             if (client != null) {
-                NotificationEntity notification = NotificationEntity.builder()
-                        .client(client)
-                        .type("HARDWARE_FAILURE")
-                        .location(sensor.getLocation() != null ? sensor.getLocation() : "Desconocida")
-                        .diagnosis("Falla de Conexión: El sensor " + sensor.getSerialNumber() + " dejó de transmitir datos.")
-                        .executedAction("Revisión técnica requerida.")
-                        .isRead(false)
-                        .createdAt(LocalDateTime.now())
-                        .build();
+                String location = sensor.getLocation() != null ? sensor.getLocation() : "Desconocida";
+                
+                NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationAndTypeOrderByCreatedAtDesc(client, location, "HARDWARE_FAILURE");
+                
+                boolean shouldSave = true;
+                if (lastNotification != null 
+                    && java.time.temporal.ChronoUnit.MINUTES.between(lastNotification.getCreatedAt(), LocalDateTime.now()) < 15) {
+                    shouldSave = false; // Debounce: 15 min rule for hardware failure
+                }
 
-                notificationRepository.save(notification);
-                System.out.println("Hardware failure detected for sensor: " + sensor.getSerialNumber());
+                if (shouldSave) {
+                    NotificationEntity notification = NotificationEntity.builder()
+                            .client(client)
+                            .type("HARDWARE_FAILURE")
+                            .location(location)
+                            .diagnosis("Falla de Conexión: El sensor " + sensor.getSerialNumber() + " dejó de transmitir datos.")
+                            .executedAction("Revisión técnica requerida.")
+                            .isRead(false)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+
+                    notificationRepository.save(notification);
+                    System.out.println("Hardware failure detected for sensor: " + sensor.getSerialNumber());
+                }
             }
         }
     }

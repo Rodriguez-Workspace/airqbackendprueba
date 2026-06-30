@@ -9,4 +9,5 @@ import java.util.List;
 public interface NotificationEntityRepository extends JpaRepository<NotificationEntity, Long> {
     List<NotificationEntity> findByClientOrderByCreatedAtDesc(User client);
     NotificationEntity findFirstByClientAndLocationOrderByCreatedAtDesc(User client, String location);
+    NotificationEntity findFirstByClientAndLocationAndTypeOrderByCreatedAtDesc(User client, String location, String type);
 }

@@ -36,13 +36,13 @@ public class AIAlertListener {
                     String location = sensor.getLocation() != null ? sensor.getLocation() : "Desconocida";
                     String executedAction = event.aiActionTaken();
                     
-                    NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationOrderByCreatedAtDesc(client, location);
+                    NotificationEntity lastNotification = notificationRepository.findFirstByClientAndLocationAndTypeOrderByCreatedAtDesc(client, location, "AI_ACTION");
                     
                     boolean shouldSave = true;
                     if (lastNotification != null 
                         && executedAction.equals(lastNotification.getExecutedAction()) 
                         && ChronoUnit.MINUTES.between(lastNotification.getCreatedAt(), LocalDateTime.now()) < 15) {
-                        shouldSave = false; // Debounce: Ya hay una alerta idéntica reciente
+                        shouldSave = false; // Debounce: Ya hay una alerta idéntica reciente para esta aula
                     }
 
                     if (shouldSave) {
